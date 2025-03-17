@@ -38,18 +38,60 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
       
+    - name: List build directory contents (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        dir ${{github.workspace}}\build\ /s /b | findstr /i "\.exe$"
+      shell: cmd
+      
+    - name: List build directory contents (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        find ${{github.workspace}}/build -type f -executable | grep -v "\.o$\|\.a$\|\.so$"
+      shell: bash
+      
     - name: Create artifact directory
       run: mkdir -p ${{github.workspace}}/artifacts
       shell: bash
       
     - name: Copy executable (Windows)
       if: matrix.os == 'windows-latest'
-      run: copy ${{github.workspace}}\build\Release\${{ matrix.artifact_name }} ${{github.workspace}}\artifacts\
+      run: |
+        set FOUND=0
+        if exist "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" (
+          copy "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          set FOUND=1
+        )
+        if exist "${{github.workspace}}\build\${{ matrix.artifact_name }}" (
+          copy "${{github.workspace}}\build\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          set FOUND=1
+        )
+        if exist "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" (
+          copy "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          set FOUND=1
+        )
+        if %FOUND%==0 (
+          echo "Could not find executable in the expected locations. Check the directory listing above."
+          exit 1
+        )
       shell: cmd
       
     - name: Copy executable (Unix)
       if: matrix.os != 'windows-latest'
-      run: cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
+      run: |
+        export FOUND=0
+        if [ -f "${{github.workspace}}/build/${{ matrix.artifact_name }}" ]; then
+          cp "${{github.workspace}}/build/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          export FOUND=1
+        fi
+        if [ -f "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" ]; then
+          cp "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          export FOUND=1
+        fi
+        if [ $FOUND -eq 0 ]; then
+          echo "Could not find executable in the expected locations. Check the directory listing above."
+          exit 1
+        fi
       shell: bash
 
     - name: Upload build artifact
@@ -57,7 +99,7 @@ jobs:
       with:
         name: ${{ matrix.asset_name }}
         path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
-        retention-days: 1
+        retention-days: 7
         
   release:
     name: Create Release
@@ -72,7 +114,7 @@ jobs:
       
     - name: Get short SHA
       id: slug
-      run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
+      run: echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
       shell: bash
       
     - name: Download artifacts
