@@ -1,4 +1,4 @@
-#Object Loader - Luca Letroye 2025#
+# Object Loader - Luca Letroye 2025 
 
 convert .obj files to .ini files.
 
