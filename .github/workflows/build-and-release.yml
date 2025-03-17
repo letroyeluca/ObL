@@ -1,0 +1,81 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags (v1.0.0, v2.1.3, etc.)
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: ObL
+            asset_name: ObL-linux
+          - os: macos-latest
+            platform: macos
+            artifact_name: ObL
+            asset_name: ObL-macos
+          - os: windows-latest
+            platform: windows
+            artifact_name: ObL.exe
+            asset_name: ObL-windows.exe
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+        
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release
+      
+    - name: Copy executable to artifact location
+      run: |
+        mkdir -p ${{github.workspace}}/artifacts
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          cp ${{github.workspace}}/build/Release/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
+        else
+          cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
+        fi
+      shell: bash
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.asset_name }}
+        path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
+        
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/program-linux/program
+          artifacts/program-macos/program
+          artifacts/program-windows.exe/program.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
