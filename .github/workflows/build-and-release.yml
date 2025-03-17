@@ -16,19 +16,19 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            artifact_name: ObL
-            asset_name: ObL-linux
+            artifact_name: program
+            asset_name: program-linux
           - os: macos-latest
             platform: macos
-            artifact_name: ObL
-            asset_name: ObL-macos
+            artifact_name: program
+            asset_name: program-macos
           - os: windows-latest
             platform: windows
-            artifact_name: ObL.exe
-            asset_name: ObL-windows.exe
+            artifact_name: program.exe
+            asset_name: program-windows.exe
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
         
@@ -49,7 +49,7 @@ jobs:
       shell: bash
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
@@ -61,10 +61,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     
