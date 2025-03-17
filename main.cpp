@@ -14,8 +14,8 @@ struct Line {
 
 int main(int argc, char* argv[]) {
     if (argc < 6) {
-        std::cerr << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
-        return 1;
+        std::cout << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
+        return 0;
     }
 
     std::ifstream objFile(argv[1]);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     // Write Figure Section
     outFile << "[Figure0]\n";
     outFile << "type = \"LineDrawing\"\n";
-    outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";
+    outFile << "rotateX = 0\nrotateY = -90\nrotateZ = 90\nscale = 1.0\n";
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
     outFile << "nrPoints = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
