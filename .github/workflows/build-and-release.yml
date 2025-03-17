@@ -2,91 +2,69 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*' # Trigger on version tags (v1.0.0, v2.1.3, etc.)
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types: [created]
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            artifact_name: program
-            asset_name: program-linux
-          - os: macos-latest
-            platform: macos
-            artifact_name: program
-            asset_name: program-macos
-          - os: windows-latest
-            platform: windows
-            artifact_name: program.exe
-            asset_name: program-windows.exe
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
-        
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
-        
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release
-      
-    - name: Create artifact directory
-      run: mkdir -p ${{github.workspace}}/artifacts
-      shell: bash
-      
-    - name: Copy executable (Windows)
-      if: matrix.os == 'windows-latest'
-      run: copy ${{github.workspace}}\build\Release\${{ matrix.artifact_name }} ${{github.workspace}}\artifacts\
-      shell: cmd
-      
-    - name: Copy executable (Unix)
-      if: matrix.os != 'windows-latest'
-      run: cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
-      shell: bash
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.asset_name }}
-        path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
-        retention-days: 1
-        
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt update && sudo apt install -y cmake g++
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: choco install cmake
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package Executable
+        run: |
+          mkdir -p artifacts
+          if [[ "$RUNNER_OS" == "Linux" ]]; then cp build/your_executable artifacts/your_executable_linux; fi
+          if [[ "$RUNNER_OS" == "Windows" ]]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
+          if [[ "$RUNNER_OS" == "macOS" ]]; then cp build/your_executable artifacts/your_executable_mac; fi
+        shell: bash
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Executables-${{ matrix.os }}
+          path: artifacts/*
+
   release:
-    name: Create Release
     needs: build
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-    
-    - name: Display structure of downloaded files
-      run: ls -R artifacts
-      shell: bash
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          artifacts/program-linux/program
-          artifacts/program-macos/program
-          artifacts/program-windows.exe/program.exe
-        draft: false
-        prerelease: false
-        generate_release_notes: true
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
