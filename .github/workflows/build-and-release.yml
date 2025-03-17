@@ -44,8 +44,14 @@ jobs:
         dir ${{github.workspace}}\build\ /s /b | findstr /i "\.exe$"
       shell: cmd
       
-    - name: List build directory contents (Unix)
-      if: matrix.os != 'windows-latest'
+    - name: List build directory contents (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        find ${{github.workspace}}/build -type f -perm +111 | grep -v "\.o$\|\.a$\|\.dylib$"
+      shell: bash
+      
+    - name: List build directory contents (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         find ${{github.workspace}}/build -type f -executable | grep -v "\.o$\|\.a$\|\.so$"
       shell: bash
@@ -88,9 +94,22 @@ jobs:
           cp "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
           export FOUND=1
         fi
+        # Additional paths common in CMake projects
+        if [ -f "${{github.workspace}}/build/Release/${{ matrix.artifact_name }}" ]; then
+          cp "${{github.workspace}}/build/Release/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          export FOUND=1
+        fi
         if [ $FOUND -eq 0 ]; then
-          echo "Could not find executable in the expected locations. Check the directory listing above."
-          exit 1
+          # Last resort: try to find the executable ourselves
+          EXEC_PATH=$(find "${{github.workspace}}/build" -name "${{ matrix.artifact_name }}" -type f | head -n 1)
+          if [ ! -z "$EXEC_PATH" ]; then
+            cp "$EXEC_PATH" "${{github.workspace}}/artifacts/"
+            export FOUND=1
+            echo "Found executable at $EXEC_PATH"
+          else
+            echo "Could not find executable in the expected locations. Check the directory listing above."
+            exit 1
+          fi
         fi
       shell: bash
 
