@@ -14,8 +14,8 @@ struct Line {
 
 int main(int argc, char* argv[]) {
     if (argc < 6) {
-        std::cerr << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
-        return 1;
+        std::cout << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
+        return 0;
     }
 
     std::ifstream objFile(argv[1]);
