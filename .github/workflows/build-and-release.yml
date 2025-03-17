@@ -28,7 +28,8 @@ jobs:
             asset_name: program-windows.exe
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         submodules: 'recursive'
         
@@ -38,39 +39,49 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
       
-    - name: Copy executable to artifact location
-      run: |
-        mkdir -p ${{github.workspace}}/artifacts
-        if [ "${{ matrix.os }}" == "windows-latest" ]; then
-          cp ${{github.workspace}}/build/Release/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
-        else
-          cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
-        fi
+    - name: Create artifact directory
+      run: mkdir -p ${{github.workspace}}/artifacts
+      shell: bash
+      
+    - name: Copy executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: copy ${{github.workspace}}\build\Release\${{ matrix.artifact_name }} ${{github.workspace}}\artifacts\
+      shell: cmd
+      
+    - name: Copy executable (Unix)
+      if: matrix.os != 'windows-latest'
+      run: cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
       shell: bash
 
-    - name: Upload artifact
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
+        retention-days: 1
         
   release:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Download all artifacts
+    - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
     
+    - name: Display structure of downloaded files
+      run: ls -R artifacts
+      shell: bash
+    
     - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           artifacts/program-linux/program
