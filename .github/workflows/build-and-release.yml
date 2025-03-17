@@ -35,22 +35,17 @@ jobs:
 
       - name: Configure CMake
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
-          else
-            cmake -B build -DCMAKE_BUILD_TYPE=Release
-          fi
-        shell: bash
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$GITHUB_WORKSPACE/build
 
       - name: Build
         run: cmake --build build --config Release
 
       - name: Package Executable
         run: |
-          mkdir artifacts
-          if [ "$RUNNER_OS" = "Linux" ]; then cp build/your_executable artifacts/your_executable_linux; fi
-          if [ "$RUNNER_OS" = "Windows" ]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
-          if [ "$RUNNER_OS" = "macOS" ]; then cp build/your_executable artifacts/your_executable_mac; fi
+            mkdir -p artifacts
+            if [ "$RUNNER_OS" = "Linux" ]; then cp build/your_executable artifacts/your_executable_linux; fi
+            if [ "$RUNNER_OS" = "Windows" ]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
+            if [ "$RUNNER_OS" = "macOS" ]; then cp build/your_executable artifacts/your_executable_mac || cp build/Release/your_executable artifacts/your_executable_mac; fi
         shell: bash
 
       - name: Upload Build Artifacts
