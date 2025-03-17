@@ -65,15 +65,15 @@ jobs:
       run: |
         set FOUND=0
         if exist "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          copy "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
           set FOUND=1
         )
         if exist "${{github.workspace}}\build\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          copy "${{github.workspace}}\build\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
           set FOUND=1
         )
         if exist "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\"
+          copy "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
           set FOUND=1
         )
         if %FOUND%==0 (
@@ -87,23 +87,23 @@ jobs:
       run: |
         export FOUND=0
         if [ -f "${{github.workspace}}/build/${{ matrix.artifact_name }}" ]; then
-          cp "${{github.workspace}}/build/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          cp "${{github.workspace}}/build/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/${{ matrix.asset_name }}"
           export FOUND=1
         fi
         if [ -f "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" ]; then
-          cp "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          cp "${{github.workspace}}/build/bin/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/${{ matrix.asset_name }}"
           export FOUND=1
         fi
         # Additional paths common in CMake projects
         if [ -f "${{github.workspace}}/build/Release/${{ matrix.artifact_name }}" ]; then
-          cp "${{github.workspace}}/build/Release/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/"
+          cp "${{github.workspace}}/build/Release/${{ matrix.artifact_name }}" "${{github.workspace}}/artifacts/${{ matrix.asset_name }}"
           export FOUND=1
         fi
         if [ $FOUND -eq 0 ]; then
           # Last resort: try to find the executable ourselves
           EXEC_PATH=$(find "${{github.workspace}}/build" -name "${{ matrix.artifact_name }}" -type f | head -n 1)
           if [ ! -z "$EXEC_PATH" ]; then
-            cp "$EXEC_PATH" "${{github.workspace}}/artifacts/"
+            cp "$EXEC_PATH" "${{github.workspace}}/artifacts/${{ matrix.asset_name }}"
             export FOUND=1
             echo "Found executable at $EXEC_PATH"
           else
@@ -117,7 +117,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
-        path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
+        path: ${{github.workspace}}/artifacts/${{ matrix.asset_name }}
         retention-days: 7
         
   release:
@@ -151,9 +151,9 @@ jobs:
         tag_name: build-${{ github.run_number }}-${{ steps.slug.outputs.sha7 }}
         name: Build ${{ github.run_number }} (${{ steps.slug.outputs.sha7 }})
         files: |
-          artifacts/ObLoader-linux/ObLoader
-          artifacts/ObLoader-macos/ObLoader
-          artifacts/ObLoader-windows.exe/ObLoader.exe
+          artifacts/ObLoader-linux/ObLoader-linux
+          artifacts/ObLoader-macos/ObLoader-macos
+          artifacts/ObLoader-windows.exe/ObLoader-windows.exe
         draft: false
         prerelease: true
         generate_release_notes: true
