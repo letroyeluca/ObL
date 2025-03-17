@@ -27,24 +27,30 @@ jobs:
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
-        run: choco install cmake
+        run: choco install cmake ninja
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: brew install cmake
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+          else
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+          fi
+        shell: bash
 
       - name: Build
         run: cmake --build build --config Release
 
       - name: Package Executable
         run: |
-          mkdir -p artifacts
-          if [[ "$RUNNER_OS" == "Linux" ]]; then cp build/your_executable artifacts/your_executable_linux; fi
-          if [[ "$RUNNER_OS" == "Windows" ]]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
-          if [[ "$RUNNER_OS" == "macOS" ]]; then cp build/your_executable artifacts/your_executable_mac; fi
+          mkdir artifacts
+          if [ "$RUNNER_OS" = "Linux" ]; then cp build/your_executable artifacts/your_executable_linux; fi
+          if [ "$RUNNER_OS" = "Windows" ]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
+          if [ "$RUNNER_OS" = "macOS" ]; then cp build/your_executable artifacts/your_executable_mac; fi
         shell: bash
 
       - name: Upload Build Artifacts
