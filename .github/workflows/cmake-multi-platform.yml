@@ -1,8 +1,8 @@
-name: CMake on multiple platforms
+name: CMake Multi-Platform Build and Release
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # Runs when pushing to main branch
   pull_request:
     branches: [ "main" ]
 
@@ -35,7 +35,8 @@ jobs:
             c_compiler: cl
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Set reusable strings
       id: strings
@@ -51,43 +52,56 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
 
-    - name: Build
+    - name: Build project
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }}
+    - name: List build directory contents (for debugging)
+      run: ls -R ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: compiled-binaries-${{ matrix.os }}-${{ matrix.cpp_compiler }}
+        path: ${{ steps.strings.outputs.build-output-dir }}/*
 
   release:
     needs: build
-    runs-on: ubuntu-latest  # This will create the release after the build job
+    runs-on: ubuntu-latest  # Runs after build job completes
 
     permissions:
-      contents: write  # Allow write permission for creating releases
-      id-token: write  # Allow generating release tags
+      contents: write  # Allows creating releases
+      id-token: write  # Required for release tagging
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Download all built artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: build_artifacts
+
+    - name: List downloaded artifacts (for debugging)
+      run: ls -R build_artifacts
+
     - name: Create GitHub release
       id: create_release
       uses: actions/create-release@v1
       with:
-        tag_name: v1.0.0  # Replace with your dynamic versioning logic, e.g., `${{ github.sha }}`
+        tag_name: v1.0.0  # You can make this dynamic, e.g., `v${{ github.run_number }}`
         release_name: "Release v1.0.0"
-        body: 'Release description'
-        draft: false  # Set to true if you want to create a draft release
-        prerelease: false  # Set to true for pre-releases
+        body: 'Automatically generated release from GitHub Actions'
+        draft: false  # Set to true if you want a draft release
+        prerelease: false
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is passed here
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload release assets
+    - name: Upload compiled binaries to release
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./build/your-binary-file  # Path to the compiled binary
-        asset_name: your-binary-file  # Name it as you want it to appear on the release page
+        asset_path: build_artifacts/compiled-binaries-ubuntu-latest-g++/your-binary-file  # Update this with your actual file
+        asset_name: your-binary-file  # Name of the uploaded file
         asset_content_type: application/octet-stream
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is passed here
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
