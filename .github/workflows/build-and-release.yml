@@ -15,16 +15,16 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            artifact_name: ObL
-            asset_name: ObL-linux
+            artifact_name: ObLoader
+            asset_name: ObLoader-linux
           - os: macos-latest
             platform: macos
-            artifact_name: ObL
-            asset_name: ObL-macos
+            artifact_name: ObLoader
+            asset_name: ObLoader-macos
           - os: windows-latest
             platform: windows
-            artifact_name: ObL.exe
-            asset_name: ObL-windows.exe
+            artifact_name: ObLoader.exe
+            asset_name: ObLoader-windows.exe
 
     steps:
     - name: Checkout code
@@ -90,9 +90,9 @@ jobs:
         tag_name: build-${{ github.run_number }}-${{ steps.slug.outputs.sha7 }}
         name: Build ${{ github.run_number }} (${{ steps.slug.outputs.sha7 }})
         files: |
-          artifacts/ObL-linux/ObL
-          artifacts/ObL-macos/ObL
-          artifacts/ObL-windows.exe/ObL.exe
+          artifacts/ObLoader-linux/ObLoader
+          artifacts/ObLoader-macos/ObLoader
+          artifacts/ObLoader-windows.exe/ObLoader.exe
         draft: false
         prerelease: true
         generate_release_notes: true
