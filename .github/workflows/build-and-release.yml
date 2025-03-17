@@ -63,24 +63,16 @@ jobs:
     - name: Copy executable (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        set FOUND=0
-        if exist "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
-          set FOUND=1
+        mkdir ${{github.workspace}}\artifacts 2>nul
+        for /f "delims=" %%F in ('where /r "${{github.workspace}}\build" ObLoader.exe') do (
+          copy "%%F" "${{github.workspace}}\artifacts\ObLoader-windows.exe"
+          echo "Executable found and copied from %%F"
+          exit /b 0
         )
-        if exist "${{github.workspace}}\build\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
-          set FOUND=1
-        )
-        if exist "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" (
-          copy "${{github.workspace}}\build\bin\Release\${{ matrix.artifact_name }}" "${{github.workspace}}\artifacts\${{ matrix.asset_name }}"
-          set FOUND=1
-        )
-        if %FOUND%==0 (
-          echo "Could not find executable in the expected locations. Check the directory listing above."
-          exit 1
-        )
+        echo "Could not find executable in build directory."
+        exit /b 1
       shell: cmd
+
       
     - name: Copy executable (Unix)
       if: matrix.os != 'windows-latest'
