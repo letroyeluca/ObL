@@ -1,34 +1,93 @@
-jobs:
-  release:
-    needs: build
-    runs-on: ubuntu-latest  # You can specify any runner here; it will create the release after the build
+name: CMake on multiple platforms
 
-    permissions:
-      contents: write  # Grant permission to create releases and upload assets
-      id-token: write  # Allow generation of release tags
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+        c_compiler: [gcc, clang, cl]
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+        exclude:
+          - os: windows-latest
+            c_compiler: gcc
+          - os: windows-latest
+            c_compiler: clang
+          - os: ubuntu-latest
+            c_compiler: cl
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Create GitHub release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: v1.0.0  # Replace with your dynamic versioning logic, e.g., `${{ github.sha }}`
-          release_name: "Release v1.0.0"
-          body: 'Release description'
-          draft: false  # Set to true if you want to create a draft release
-          prerelease: false  # Set to true for pre-releases
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the token explicitly
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/your-binary-file  # Path to the compiled binary
-          asset_name: your-binary-file  # Name it as you want it to appear on the release page
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the token explicitly
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    - name: Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --build-config ${{ matrix.build_type }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest  # This will create the release after the build job
+
+    permissions:
+      contents: write  # Allow write permission for creating releases
+      id-token: write  # Allow generating release tags
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create GitHub release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: v1.0.0  # Replace with your dynamic versioning logic, e.g., `${{ github.sha }}`
+        release_name: "Release v1.0.0"
+        body: 'Release description'
+        draft: false  # Set to true if you want to create a draft release
+        prerelease: false  # Set to true for pre-releases
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is passed here
+
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./build/your-binary-file  # Path to the compiled binary
+        asset_name: your-binary-file  # Name it as you want it to appear on the release page
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Ensure the token is passed here
