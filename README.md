@@ -6,6 +6,6 @@ convert .obj files to .ini files.
 ```
 cmake .
 make
-ObL <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>
+./ObjectLoader <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>
 ```
 
