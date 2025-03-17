@@ -62,6 +62,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest  # You can specify any runner here; it will create the release after the build
 
+    permissions:
+      contents: write  # Grant write permission for releases
+      id-token: write  # Required for generating release tags
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
