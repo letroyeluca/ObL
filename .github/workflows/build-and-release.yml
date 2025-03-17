@@ -2,70 +2,97 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  release:
-    types: [created]
+    branches: ['*']  # Run on all branch pushes
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifact_name: ObL
+            asset_name: ObL-linux
+          - os: macos-latest
+            platform: macos
+            artifact_name: ObL
+            asset_name: ObL-macos
+          - os: windows-latest
+            platform: windows
+            artifact_name: ObL.exe
+            asset_name: ObL-windows.exe
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+        
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release
+      
+    - name: Create artifact directory
+      run: mkdir -p ${{github.workspace}}/artifacts
+      shell: bash
+      
+    - name: Copy executable (Windows)
+      if: matrix.os == 'windows-latest'
+      run: copy ${{github.workspace}}\build\Release\${{ matrix.artifact_name }} ${{github.workspace}}\artifacts\
+      shell: cmd
+      
+    - name: Copy executable (Unix)
+      if: matrix.os != 'windows-latest'
+      run: cp ${{github.workspace}}/build/${{ matrix.artifact_name }} ${{github.workspace}}/artifacts/
+      shell: bash
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt update && sudo apt install -y cmake g++
-
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: choco install cmake ninja
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: brew install cmake
-
-      - name: Configure CMake
-        run: |
-            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$GITHUB_WORKSPACE/build
-
-      - name: Build
-        run: cmake --build build --config Release
-
-      - name: Package Executable
-        run: |
-            mkdir -p artifacts
-            if [ "$RUNNER_OS" = "Linux" ]; then cp build/your_executable artifacts/your_executable_linux; fi
-            if [ "$RUNNER_OS" = "Windows" ]; then cp build/Release/your_executable.exe artifacts/your_executable_windows.exe; fi
-            if [ "$RUNNER_OS" = "macOS" ]; then cp build/your_executable artifacts/your_executable_mac || cp build/Release/your_executable artifacts/your_executable_mac; fi
-        shell: bash
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Executables-${{ matrix.os }}
-          path: artifacts/*
-
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: ${{github.workspace}}/artifacts/${{ matrix.artifact_name }}
+        retention-days: 1
+        
   release:
+    name: Create Release
     needs: build
-    if: github.event_name == 'release'
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/**/*
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get short SHA
+      id: slug
+      run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
+      shell: bash
+      
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Display structure of downloaded files
+      run: ls -R artifacts
+      shell: bash
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: build-${{ github.run_number }}-${{ steps.slug.outputs.sha7 }}
+        name: Build ${{ github.run_number }} (${{ steps.slug.outputs.sha7 }})
+        files: |
+          artifacts/ObL-linux/ObL
+          artifacts/ObL-macos/ObL
+          artifacts/ObL-windows.exe/ObL.exe
+        draft: false
+        prerelease: true
+        generate_release_notes: true
