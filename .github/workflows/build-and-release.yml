@@ -6,12 +6,11 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             platform: linux
@@ -25,7 +24,6 @@ jobs:
             platform: macos-intel
             artifact_name: ObLoader
             asset_name: ObLoader-macos-x86_64
-            arch: x86_64
           - os: windows-latest
             platform: windows
             artifact_name: ObLoader.exe
@@ -37,32 +35,31 @@ jobs:
       with:
         submodules: 'recursive'
         
-    - name: Configure CMake
-      run: |
-        if [ "${{ matrix.platform }}" == "macos-intel" ]; then
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
-        else
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
-        fi
-      shell: bash
+    - name: Configure CMake (Regular)
+      if: matrix.platform != 'macos-intel'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
         
+    - name: Configure CMake (macOS Intel)
+      if: matrix.platform == 'macos-intel'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+      
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
       
     - name: List build directory contents (Windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.platform == 'windows'
       run: |
         dir ${{github.workspace}}\build\ /s /b | findstr /i "\.exe$"
       shell: cmd
       
     - name: List build directory contents (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.platform == 'macos-arm' || matrix.platform == 'macos-intel'
       run: |
         find ${{github.workspace}}/build -type f -perm +111 | grep -v "\.o$\|\.a$\|\.dylib$"
       shell: bash
       
     - name: List build directory contents (Linux)
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.platform == 'linux'
       run: |
         find ${{github.workspace}}/build -type f -executable | grep -v "\.o$\|\.a$\|\.so$"
       shell: bash
@@ -72,7 +69,7 @@ jobs:
       shell: bash
       
     - name: Copy executable (Windows)
-      if: matrix.os == 'windows-latest'
+      if: matrix.platform == 'windows'
       run: |
         mkdir ${{github.workspace}}\artifacts 2>nul
         for /f "delims=" %%F in ('where /r "${{github.workspace}}\build" ObLoader.exe') do (
@@ -83,10 +80,9 @@ jobs:
         echo "Could not find executable in build directory."
         exit /b 1
       shell: cmd
-
       
     - name: Copy executable (Unix)
-      if: matrix.os != 'windows-latest'
+      if: matrix.platform != 'windows'
       run: |
         export FOUND=0
         if [ -f "${{github.workspace}}/build/${{ matrix.artifact_name }}" ]; then
