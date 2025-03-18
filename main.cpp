@@ -12,7 +12,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -57,7 +56,14 @@ int main(int argc, char* argv[]) {
         if (type == "v") {
             Vertex v;
             iss >> v.x >> v.y >> v.z;
-            vertices.push_back(v);
+
+            // Convert OBJ Y-up to Z-up by swapping Y and Z, negating new Y
+            Vertex converted;
+            converted.x = v.x;
+            converted.y = -v.z;
+            converted.z = v.y;
+
+            vertices.push_back(converted);
         } else if (type == "f") {
             std::vector<int> faceVertices;
             std::string vertexInfo;
@@ -88,7 +94,7 @@ int main(int argc, char* argv[]) {
     // Write Figure Section
     outFile << "[Figure0]\n";
     outFile << "type = \"LineDrawing\"\n";
-    outFile << "rotateX = 0\nrotateY = -90\nrotateZ = 90\nscale = 1.0\n";
+    outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";  // Reset rotation
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
     outFile << "nrPoints = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
