@@ -2,7 +2,15 @@
 
 convert .obj files to .ini files.
 
-**Usage:**
+
+**Usage for release:**
+```
+chmod +x <excecutable name>
+./ObjectLoader <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>
+```
+
+
+**Usage for self compile (not recommended):**
 ```
 cmake .
 make
