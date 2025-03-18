@@ -1,7 +1,7 @@
 # Object Loader - Luca Letroye 2025 
-[![Downloads](https://img.shields.io/github/downloads/zen-browser/desktop/total.svg)](https://github.com/letroyeluca/ObL/releases)
-convert .obj files to .ini files.
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/letroyeluca/ObL/total)
 
+convert .obj files to .ini files.
 
 **Usage for release:**
 ```
