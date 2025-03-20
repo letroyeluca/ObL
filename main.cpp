@@ -26,7 +26,7 @@ struct Line {
     double v1, v2;
 };
 
-double main(double argc, char* argv[]) {
+int main(double argc, char* argv[]) {
     if (argc < 6) {
         std::cout << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
         return 0;
