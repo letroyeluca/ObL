@@ -17,6 +17,7 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <iomanip>  // Added for fixed-point formatting
 
 struct Vertex {
     double x, y, z;
@@ -83,6 +84,9 @@ int main(int argc, char* argv[]) {
 
     objFile.close();
 
+    // Set fixed-point notation for output and disable scientific notation
+    outFile << std::fixed << std::setprecision(6) << std::noshowpoint << std::setw(0);
+
     // Write General Section
     outFile << "[General]\n";
     outFile << "type = \"Wireframe\"\n";
@@ -94,17 +98,17 @@ int main(int argc, char* argv[]) {
     // Write Figure Section
     outFile << "[Figure0]\n";
     outFile << "type = \"LineDrawing\"\n";
-    outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";  // Reset rotation
+    outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
-    outFile << "nrPodoubles = " << vertices.size() << "\n";
+    outFile << "nrPoints = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
 
     for (size_t i = 0; i < vertices.size(); ++i) {
-        outFile << "podouble" << i << " = (" << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
+        outFile << "point" << i << " = (" << std::fixed << std::setprecision(6) << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
     }
 
     for (size_t i = 0; i < lines.size(); ++i) {
-        outFile << "line" << i << " = (" << lines[i].v1 << ", " << lines[i].v2 << ")\n";
+        outFile << "line" << i << " = (" << std::fixed << std::setprecision(6) << lines[i].v1 << ", " << lines[i].v2 << ")\n";
     }
 
     outFile.close();
