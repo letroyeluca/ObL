@@ -100,11 +100,11 @@ int main(int argc, char* argv[]) {
     outFile << "type = \"LineDrawing\"\n";
     outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
-    outFile << "nrPodoubles = " << vertices.size() << "\n";
+    outFile << "nrPoints = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
 
     for (size_t i = 0; i < vertices.size(); ++i) {
-        outFile << "podouble" << i << " = (" << std::fixed << std::setprecision(6) << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
+        outFile << "point" << i << " = (" << std::fixed << std::setprecision(6) << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
     }
 
     for (size_t i = 0; i < lines.size(); ++i) {
