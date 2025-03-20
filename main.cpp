@@ -23,10 +23,10 @@ struct Vertex {
 };
 
 struct Line {
-    int v1, v2;
+    double v1, v2;
 };
 
-int main(int argc, char* argv[]) {
+double main(double argc, char* argv[]) {
     if (argc < 6) {
         std::cout << "Usage: " << argv[0] << " <input.obj> <output.ini> <eye_x> <eye_y> <eye_z>" << std::endl;
         return 0;
@@ -65,17 +65,17 @@ int main(int argc, char* argv[]) {
 
             vertices.push_back(converted);
         } else if (type == "f") {
-            std::vector<int> faceVertices;
+            std::vector<double> faceVertices;
             std::string vertexInfo;
             while (iss >> vertexInfo) {
                 std::istringstream vertexStream(vertexInfo);
-                int index;
+                double index;
                 vertexStream >> index;
                 faceVertices.push_back(index - 1); // OBJ indices start at 1
             }
 
             for (size_t i = 0; i < faceVertices.size(); ++i) {
-                int next = (i + 1) % faceVertices.size();
+                double next = (i + 1) % faceVertices.size();
                 lines.push_back({faceVertices[i], faceVertices[next]});
             }
         }
@@ -96,11 +96,11 @@ int main(int argc, char* argv[]) {
     outFile << "type = \"LineDrawing\"\n";
     outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";  // Reset rotation
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
-    outFile << "nrPoints = " << vertices.size() << "\n";
+    outFile << "nrPodoubles = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
 
     for (size_t i = 0; i < vertices.size(); ++i) {
-        outFile << "point" << i << " = (" << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
+        outFile << "podouble" << i << " = (" << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
     }
 
     for (size_t i = 0; i < lines.size(); ++i) {
