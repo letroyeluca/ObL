@@ -24,7 +24,7 @@ struct Vertex {
 };
 
 struct Line {
-    double v1, v2;
+    int v1, v2;
 };
 
 int main(int argc, char* argv[]) {
