@@ -66,17 +66,17 @@ int main(int argc, char* argv[]) {
 
             vertices.push_back(converted);
         } else if (type == "f") {
-            std::vector<double> faceVertices;
+            std::vector<int> faceVertices;
             std::string vertexInfo;
             while (iss >> vertexInfo) {
                 std::istringstream vertexStream(vertexInfo);
-                double index;
+                int index;
                 vertexStream >> index;
                 faceVertices.push_back(index - 1); // OBJ indices start at 1
             }
 
             for (size_t i = 0; i < faceVertices.size(); ++i) {
-                double next = (i + 1) % faceVertices.size();
+                int next = (i + 1) % faceVertices.size();
                 lines.push_back({faceVertices[i], faceVertices[next]});
             }
         }
@@ -100,18 +100,19 @@ int main(int argc, char* argv[]) {
     outFile << "type = \"LineDrawing\"\n";
     outFile << "rotateX = 0\nrotateY = 0\nrotateZ = 0\nscale = 1.0\n";
     outFile << "center = (0, 0, 0)\ncolor = (0.0, 1.0, 0.0)\n";
-    outFile << "nrPoints = " << vertices.size() << "\n";
+    outFile << "nrPodoubles = " << vertices.size() << "\n";
     outFile << "nrLines = " << lines.size() << "\n";
 
     for (size_t i = 0; i < vertices.size(); ++i) {
-        outFile << "point" << i << " = (" << std::fixed << std::setprecision(6) << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
+        outFile << "podouble" << i << " = (" << std::fixed << std::setprecision(6) << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << ")\n";
     }
 
     for (size_t i = 0; i < lines.size(); ++i) {
-        outFile << "line" << i << " = (" << std::fixed << std::setprecision(6) << lines[i].v1 << ", " << lines[i].v2 << ")\n";
+        outFile << "line" << i << " = (" << lines[i].v1 << ", " << lines[i].v2 << ")\n";
     }
 
     outFile.close();
     std::cout << "Conversion complete. Output saved to " << argv[2] << std::endl;
     return 0;
 }
+
