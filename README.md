@@ -1,5 +1,6 @@
 # Object Loader - Luca Letroye 2025 
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/letroyeluca/ObL/total)
+<!-- GitAds-Verify: CDARAAO14TEUQFN3WPTSQ318KANPO11Y -->
 
 convert .obj files to .ini files.
 
